@@ -43,6 +43,10 @@ def main():
     
     # Sidebar for configuration
     with st.sidebar:
+        # Pets Deli Logo
+        st.image("https://www.petsdeli.de/images/petsdeli-logo.svg", width=200)
+        st.markdown("---")
+        
         st.header("⚙️ Configuration")
         
         # Processing settings
