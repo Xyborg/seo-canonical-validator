@@ -65,86 +65,158 @@ def main():
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        # Step 1: Domain Input
-        st.header("📥 Step 1: Enter Domain")
-        domain_input = st.text_input(
-            "Enter website domain or URL:",
-            placeholder="https://example.com or example.com",
-            help="Enter the main domain to analyze. The app will fetch robots.txt and discover sitemaps."
-        )
+        # Step 1: Choose URL Source Method
+        st.header("🎯 Step 1: Choose URL Source")
         
-        if st.button("🔍 Discover Sitemaps") and domain_input:
-            with st.spinner("Fetching robots.txt and discovering sitemaps..."):
-                discover_sitemaps(domain_input)
-        
-        # Step 2: Sitemap Selection
-        if st.session_state.discovered_sitemaps:
-            st.header("📋 Step 2: Select Sitemaps")
+        # Method overview
+        with st.expander("ℹ️ Method Overview - Click to learn more"):
+            st.markdown("""
+            **🗺️ From Website Sitemaps:**
+            - Automatically discover URLs from your website's sitemaps
+            - Best for analyzing entire websites or large sections
+            - Requires domain input to fetch robots.txt and sitemaps
             
-            # Display discovered sitemaps
-            st.subheader("Discovered Sitemaps")
-            sitemap_data = []
-            for sitemap in st.session_state.discovered_sitemaps:
-                sitemap_data.append({
-                    "Sitemap URL": sitemap["url"],
-                    "Type": sitemap["type"],
-                    "Status": sitemap["status"],
-                    "URL Count": sitemap.get("url_count", "Unknown")
-                })
+            **📝 Manual URL List:**
+            - Directly paste specific URLs you want to analyze
+            - Perfect for testing specific pages or small lists
+            - No domain discovery needed - just paste and go
             
-            df_sitemaps = pd.DataFrame(sitemap_data)
-            st.dataframe(df_sitemaps, use_container_width=True)
-            
-            # Multi-select for sitemaps
-            sitemap_options = [f"{s['url']} ({s['type']})" for s in st.session_state.discovered_sitemaps]
-            selected_sitemap_indices = st.multiselect(
-                "Select sitemaps to analyze:",
-                range(len(sitemap_options)),
-                format_func=lambda x: sitemap_options[x],
-                help="Choose one or more sitemaps to extract URLs from"
-            )
-            
-            st.session_state.selected_sitemaps = [
-                st.session_state.discovered_sitemaps[i] for i in selected_sitemap_indices
-            ]
-        
-        # Step 3: URL Input Options
-        st.header("📝 Step 3: URL Sources")
+            **🔄 Both Methods:**
+            - Combine automatic sitemap discovery with manual URLs
+            - Great for comprehensive analysis with specific additions
+            - Duplicates are automatically removed
+            """)
         
         url_source = st.radio(
-            "Choose URL source:",
-            ["From Selected Sitemaps", "Manual URL List", "Both"],
-            help="Choose how to provide URLs for canonical tag analysis"
+            "How do you want to provide URLs for analysis?",
+            ["🗺️ From Website Sitemaps", "📝 Manual URL List", "🔄 Both Methods"],
+            help="Choose your preferred method to provide URLs for canonical tag analysis",
+            format_func=lambda x: x.split(' ', 1)[1] if ' ' in x else x
         )
         
+        # Initialize session state for URL source
+        if 'url_source_method' not in st.session_state:
+            st.session_state.url_source_method = None
+            
+        # Update session state when selection changes
+        if st.session_state.url_source_method != url_source:
+            st.session_state.url_source_method = url_source
+            # Reset relevant session state when switching methods
+            if url_source == "📝 Manual URL List":
+                st.session_state.discovered_sitemaps = []
+                st.session_state.selected_sitemaps = []
+        
+        st.markdown("---")
+        
+        # Dynamic workflow based on selection
+        if url_source in ["🗺️ From Website Sitemaps", "🔄 Both Methods"]:
+            # Sitemap-based workflow
+            st.header("🌐 Step 2: Enter Domain")
+            domain_input = st.text_input(
+                "Enter website domain or URL:",
+                placeholder="https://example.com or example.com",
+                help="Enter the main domain to analyze. The app will fetch robots.txt and discover sitemaps."
+            )
+            
+            if st.button("🔍 Discover Sitemaps") and domain_input:
+                with st.spinner("Fetching robots.txt and discovering sitemaps..."):
+                    discover_sitemaps(domain_input)
+            
+            # Step 3: Sitemap Selection (only if sitemaps discovered)
+            if st.session_state.discovered_sitemaps:
+                st.header("📋 Step 3: Select Sitemaps")
+                
+                # Display discovered sitemaps
+                st.subheader("Discovered Sitemaps")
+                sitemap_data = []
+                for sitemap in st.session_state.discovered_sitemaps:
+                    sitemap_data.append({
+                        "Sitemap URL": sitemap["url"],
+                        "Type": sitemap["type"],
+                        "Status": sitemap["status"],
+                        "URL Count": sitemap.get("url_count", "Unknown")
+                    })
+                
+                df_sitemaps = pd.DataFrame(sitemap_data)
+                st.dataframe(df_sitemaps, use_container_width=True)
+                
+                # Multi-select for sitemaps
+                sitemap_options = [f"{s['url']} ({s['type']})" for s in st.session_state.discovered_sitemaps]
+                selected_sitemap_indices = st.multiselect(
+                    "Select sitemaps to analyze:",
+                    range(len(sitemap_options)),
+                    format_func=lambda x: sitemap_options[x],
+                    help="Choose one or more sitemaps to extract URLs from"
+                )
+                
+                st.session_state.selected_sitemaps = [
+                    st.session_state.discovered_sitemaps[i] for i in selected_sitemap_indices
+                ]
+        
+        # Manual URL input section
         manual_urls = []
-        if url_source in ["Manual URL List", "Both"]:
-            st.subheader("Manual URL Input")
+        if url_source in ["📝 Manual URL List", "🔄 Both Methods"]:
+            if url_source == "📝 Manual URL List":
+                st.header("📝 Step 2: Enter URLs")
+            else:
+                st.header("📝 Step 4: Additional Manual URLs")
+            
             manual_url_text = st.text_area(
                 "Paste URLs (one per line):",
                 height=150,
-                placeholder="https://example.com/page1\nhttps://example.com/page2\n..."
+                placeholder="https://example.com/page1\nhttps://example.com/page2\nhttps://example.com/page3",
+                help="Enter each URL on a separate line. URLs will be validated automatically."
             )
             
             if manual_url_text:
                 manual_urls = [url.strip() for url in manual_url_text.split('\n') if url.strip()]
                 st.info(f"📄 {len(manual_urls)} URLs entered manually")
+                
+                # Show preview of URLs
+                if len(manual_urls) > 0:
+                    with st.expander(f"👁️ Preview URLs ({len(manual_urls)} total)"):
+                        for i, url in enumerate(manual_urls[:10], 1):  # Show first 10
+                            if validators.url(url):
+                                st.markdown(f"{i}. ✅ `{url}`")
+                            else:
+                                st.markdown(f"{i}. ❌ `{url}` (invalid)")
+                        
+                        if len(manual_urls) > 10:
+                            st.markdown(f"... and {len(manual_urls) - 10} more URLs")
         
-        # Extract URLs button
-        if (st.session_state.selected_sitemaps and url_source in ["From Selected Sitemaps", "Both"]) or \
-           (manual_urls and url_source in ["Manual URL List", "Both"]):
+        # Extract URLs button - dynamic step numbering
+        if url_source == "📝 Manual URL List":
+            next_step = "Step 3"
+        elif url_source == "🗺️ From Website Sitemaps":
+            next_step = "Step 4"
+        else:  # Both methods
+            next_step = "Step 5"
             
-            if st.button("📤 Extract URLs"):
+        if (st.session_state.selected_sitemaps and url_source in ["🗺️ From Website Sitemaps", "🔄 Both Methods"]) or \
+           (manual_urls and url_source in ["📝 Manual URL List", "🔄 Both Methods"]):
+            
+            st.markdown("---")
+            st.header(f"📤 {next_step}: Extract URLs")
+            
+            if st.button("📤 Extract & Validate URLs", type="primary"):
                 with st.spinner("Extracting URLs from selected sources..."):
                     extract_urls(url_source, manual_urls)
         
-        # Step 4: Process URLs
+        # Process URLs section - dynamic step numbering
         if st.session_state.extracted_urls:
-            st.header("🔄 Step 4: Process URLs")
+            if url_source == "📝 Manual URL List":
+                final_step = "Step 4"
+            elif url_source == "🗺️ From Website Sitemaps":
+                final_step = "Step 5"
+            else:  # Both methods
+                final_step = "Step 6"
+                
+            st.markdown("---")
+            st.header(f"🔄 {final_step}: Process URLs")
             
-            st.info(f"📊 Total URLs to process: {len(st.session_state.extracted_urls)}")
+            st.info(f"📊 Total URLs ready for processing: {len(st.session_state.extracted_urls)}")
             
-            if st.button("🚀 Start Canonical Analysis"):
+            if st.button("🚀 Start Canonical Analysis", type="primary"):
                 process_urls(concurrent_requests, request_timeout, max_retries, 
                            force_https, remove_trailing_slash, ignore_query_params)
     
@@ -152,23 +224,56 @@ def main():
         # Progress and status
         st.header("📈 Status")
         
-        if st.session_state.discovered_sitemaps:
-            st.metric("Discovered Sitemaps", len(st.session_state.discovered_sitemaps))
+        # Show current URL source method
+        if 'url_source_method' in st.session_state and st.session_state.url_source_method:
+            method_name = st.session_state.url_source_method.split(' ', 1)[1] if ' ' in st.session_state.url_source_method else st.session_state.url_source_method
+            st.info(f"**Method:** {method_name}")
         
-        if st.session_state.selected_sitemaps:
-            st.metric("Selected Sitemaps", len(st.session_state.selected_sitemaps))
+        # Sitemap-related metrics (only show for sitemap methods)
+        if url_source in ["🗺️ From Website Sitemaps", "🔄 Both Methods"]:
+            if st.session_state.discovered_sitemaps:
+                st.metric("Discovered Sitemaps", len(st.session_state.discovered_sitemaps))
+            
+            if st.session_state.selected_sitemaps:
+                st.metric("Selected Sitemaps", len(st.session_state.selected_sitemaps))
         
+        # URL metrics
         if st.session_state.extracted_urls:
-            st.metric("URLs to Process", len(st.session_state.extracted_urls))
+            st.metric("URLs Ready", len(st.session_state.extracted_urls))
         
+        # Results metrics
         if st.session_state.results is not None:
             results_df = st.session_state.results
             st.metric("Total Processed", len(results_df))
             
             # Status breakdown
+            st.markdown("**Results Breakdown:**")
             status_counts = results_df['Status'].value_counts()
             for status, count in status_counts.items():
-                st.metric(f"{status}", count)
+                if status == "Match":
+                    st.metric("✅ Matches", count)
+                elif status == "Mismatch":
+                    st.metric("❌ Mismatches", count)
+                elif status == "Error":
+                    st.metric("⚠️ Errors", count)
+                else:
+                    st.metric(status, count)
+        
+        # Quick help section
+        st.markdown("---")
+        st.markdown("**💡 Quick Tips:**")
+        if url_source == "📝 Manual URL List":
+            st.markdown("• Enter one URL per line")
+            st.markdown("• URLs are validated automatically")
+            st.markdown("• Invalid URLs will be skipped")
+        elif url_source == "🗺️ From Website Sitemaps":
+            st.markdown("• Enter the main domain first")
+            st.markdown("• Select relevant sitemaps")
+            st.markdown("• Index sitemaps contain most URLs")
+        else:  # Both methods
+            st.markdown("• Combine sitemaps + manual URLs")
+            st.markdown("• Duplicates are removed automatically")
+            st.markdown("• Use manual URLs for specific pages")
     
     # Step 5: Results Display
     if st.session_state.results is not None:
@@ -201,7 +306,7 @@ def extract_urls(url_source: str, manual_urls: List[str]):
         all_urls = set()
         
         # From sitemaps
-        if url_source in ["From Selected Sitemaps", "Both"] and st.session_state.selected_sitemaps:
+        if url_source in ["🗺️ From Website Sitemaps", "🔄 Both Methods"] and st.session_state.selected_sitemaps:
             sitemap_parser = SitemapParser()
             for sitemap in st.session_state.selected_sitemaps:
                 urls = sitemap_parser.extract_urls(sitemap["url"])
@@ -209,17 +314,21 @@ def extract_urls(url_source: str, manual_urls: List[str]):
                 st.info(f"📄 Extracted {len(urls)} URLs from {sitemap['url']}")
         
         # From manual input
-        if url_source in ["Manual URL List", "Both"] and manual_urls:
+        if url_source in ["📝 Manual URL List", "🔄 Both Methods"] and manual_urls:
             # Validate manual URLs
             valid_manual_urls = []
+            invalid_count = 0
             for url in manual_urls:
                 if validators.url(url):
                     valid_manual_urls.append(url)
                 else:
+                    invalid_count += 1
                     st.warning(f"⚠️ Invalid URL skipped: {url}")
             
             all_urls.update(valid_manual_urls)
-            st.info(f"📝 Added {len(valid_manual_urls)} manual URLs")
+            st.info(f"📝 Added {len(valid_manual_urls)} valid manual URLs")
+            if invalid_count > 0:
+                st.warning(f"⚠️ {invalid_count} invalid URLs were skipped")
         
         st.session_state.extracted_urls = list(all_urls)
         st.success(f"✅ Total unique URLs extracted: {len(st.session_state.extracted_urls)}")
