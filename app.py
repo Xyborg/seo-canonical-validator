@@ -469,8 +469,7 @@ def add_footer():
         <div style='text-align: center; padding: 20px 0; color: #666; font-size: 14px;'>
             <p>🔍 <strong>SEO Canonical Tag Validator</strong></p>
             <p>Created by <strong><a href="https://www.martinaberastegue.com/" target="_blank">Martin Aberastegue</a></strong> | 
-            Check the code in <a href="https://github.com/Xyborg/seo-canonical-validator" target="_blank">GitHub</a> | 
-            Built with ❤️ using Streamlit</p>
+            Check the code in <a href="https://github.com/Xyborg/seo-canonical-validator" target="_blank">GitHub</a></p>
         </div>
         """, 
         unsafe_allow_html=True
