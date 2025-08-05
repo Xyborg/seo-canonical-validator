@@ -2,6 +2,10 @@
 
 A comprehensive Streamlit web application for validating canonical tags across websites by analyzing sitemaps and URLs.
 
+## 🌐 Online Demo
+
+Try the live application: **[SEO Canonical Checker](https://seo-canonical-checker.streamlit.app/)**
+
 ## 🚀 Features
 
 ### Core Functionality
