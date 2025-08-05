@@ -44,7 +44,9 @@ def main():
     # Sidebar for configuration
     with st.sidebar:
         # Pets Deli Logo
-        st.image("https://www.petsdeli.de/images/petsdeli-logo.svg", width=100)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.image("https://www.petsdeli.de/images/petsdeli-logo.svg", width=100)
         st.markdown("---")
         
         st.header("⚙️ Configuration")
