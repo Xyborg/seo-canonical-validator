@@ -174,6 +174,9 @@ def main():
     if st.session_state.results is not None:
         st.header("📊 Results")
         display_results(export_format)
+    
+    # Footer
+    add_footer()
 
 def discover_sitemaps(domain: str):
     """Discover sitemaps from robots.txt"""
@@ -342,6 +345,21 @@ def export_results(results_df: pd.DataFrame, export_format: str):
         
     except Exception as e:
         st.error(f"❌ Error exporting results: {str(e)}")
+
+def add_footer():
+    """Add footer with creator information"""
+    st.markdown("---")
+    st.markdown(
+        """
+        <div style='text-align: center; padding: 20px 0; color: #666; font-size: 14px;'>
+            <p>🔍 <strong>SEO Canonical Tag Validator</strong></p>
+            <p>Created by <strong>Martín Aberastegue</strong> | 
+            <a href="https://github.com/Xyborg/seo-canonical-validator" target="_blank">GitHub</a> | 
+            Built with ❤️ using Streamlit</p>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
 
 if __name__ == "__main__":
     main()
